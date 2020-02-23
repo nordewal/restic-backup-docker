@@ -19,13 +19,14 @@ ENV RESTIC_REPOSITORY=/mnt/restic
 ENV RESTIC_PASSWORD=""
 ENV RESTIC_TAG=""
 ENV NFS_TARGET=""
-ENV BACKUP_CRON="0 */2 * * *"
+ENV BACKUP_CRON="13 2 * * *"
 ENV RESTIC_FORGET_ARGS=""
 ENV RESTIC_JOB_ARGS=""
 ENV MAILX_ARGS=""
 
 # /data is the dir where you have to put the data to be backed up
-VOLUME /data
+VOLUME /data/data
+VOLUME /data/archive
 
 COPY backup.sh /bin/backup
 COPY entry.sh /entry.sh
