@@ -1,6 +1,7 @@
 name: Publish Docker
 on:
   push:
+  workflow_dispatch:
   schedule:
     - cron:  '5 4 * * 5'
 jobs:
