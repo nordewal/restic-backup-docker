@@ -19,6 +19,15 @@ Latest (experimental)
 docker pull lobaro/restic-backup-docker:latest
 ```
 
+## Hooks
+
+If you need to execute a script before or after each backup, 
+you need to add your hook script in the container folder `/hooks`:
+```
+-v ~/home/user/hooks:/hooks
+```
+Call your pre backup script `pre-backup.sh` and post backup script `post-backup.sh`
+
 Please don't hesitate to report any issue you find. **Thanks.**
 
 # Test the container
@@ -62,6 +71,39 @@ Shows `/var/log/cron.log`
 
 Additionally you can see the the full log, including restic output, of the last execution in `/var/log/backup-last.log`. When the backup fails the log is copied to `/var/log/restic-error-last.log`. If configured, you can find the full output of the mail notification in `/var/log/mail-last.log`.
 
+# Use the running container
+
+Assuming the container name is `restic-backup-var`
+
+You can execute restic with ` docker exec -ti restic-backup-var restic`
+
+## Backup
+
+To execute a backup manually independent of the CRON run:
+
+    docker exec -ti restic-backup-var /bin/backup
+    
+    
+Backup a single file or directory
+
+    docker exec -ti restic-backup-var restic backup /data/path/to/dir --tag my-tag
+
+## Restore
+
+You might want to mount a separate hostvolume at e.g. `/restore` to not override existing data while restoring. 
+
+Get your snapshot ID with
+
+    docker exec -ti restic-backup-var restic snapshots
+    
+e.g. `abcdef12`
+
+     docker exec -ti restic-backup-var restic restore --include /data/path/to/files --target / abcdef12
+
+The target is `/` since all data backed up should be inside the host mounted `/data` dir. If you mount `/restore` you should set `--target /restore` and data will end up in `/restore/data/path/to/files`.
+
+
+
 # Customize the Container
 
 The container is setup by setting [environment variables](https://docs.docker.com/engine/reference/run/#/env-environment-variables) and [volumes](https://docs.docker.com/engine/reference/run/#volume-shared-filesystems).
@@ -78,6 +120,16 @@ The container is setup by setting [environment variables](https://docs.docker.co
 * `AWS_ACCESS_KEY_ID` - Optional. When using restic with AWS S3 storage.
 * `AWS_SECRET_ACCESS_KEY` - Optional. When using restic with AWS S3 storage.
 * `MAILX_ARGS` - Optional. If specified, the content of `/var/log/backup-last.log` is sent via mail after each backup using an *external SMTP*. To have maximum flexibility, you have to specify the mail/smtp parameters by your own. Have a look at the [mailx manpage](https://linux.die.net/man/1/mailx) for further information. Example value: `-e "MAILX_ARGS=-r 'from@example.de' -s 'Result of the last restic backup run' -S smtp='smtp.example.com:587' -S smtp-use-starttls -S smtp-auth=login -S smtp-auth-user='username' -S smtp-auth-password='password' 'to@example.com'"`.
+* `OS_AUTH_URL` - Optional. When using restic with OpenStack Swift container.
+* `OS_PROJECT_ID` - Optional. When using restic with OpenStack Swift container.
+* `OS_PROJECT_NAME` - Optional. When using restic with OpenStack Swift container.
+* `OS_USER_DOMAIN_NAME` - Optional. When using restic with OpenStack Swift container.
+* `OS_PROJECT_DOMAIN_ID` - Optional. When using restic with OpenStack Swift container.
+* `OS_USERNAME` - Optional. When using restic with OpenStack Swift container.
+* `OS_PASSWORD` - Optional. When using restic with OpenStack Swift container.
+* `OS_REGION_NAME` - Optional. When using restic with OpenStack Swift container.
+* `OS_INTERFACE` - Optional. When using restic with OpenStack Swift container.
+* `OS_IDENTITY_API_VERSION` - Optional. When using restic with OpenStack Swift container.
 
 ## Volumes
 
@@ -97,6 +149,26 @@ Now you can simply specify the restic repository to be an [SFTP repository](http
 
 ```
 -e "RESTIC_REPOSITORY=sftp:user@host:/tmp/backup"
+```
+
+## Backup via OpenStack Swift
+
+Restic can backup data to an OpenStack Swift container. Because Swift supports various authentication methods, credentials are passed through environment variables. In order to help integration with existing OpenStack installations, the naming convention of those variables follows the official Python Swift client.  
+Now you can simply specify the restic repository to be an [Swift repository](https://restic.readthedocs.io/en/latest/030_preparing_a_new_repo.html#openstack-swift).
+
+```
+-e "RESTIC_REPOSITORY=swift:backup:/"
+-e "RESTIC_PASSWORD=password"
+-e "OS_AUTH_URL=https://auth.cloud.ovh.net/v3"
+-e "OS_PROJECT_ID=xxxx"
+-e "OS_PROJECT_NAME=xxxx"
+-e "OS_USER_DOMAIN_NAME=Default"
+-e "OS_PROJECT_DOMAIN_ID=default"
+-e "OS_USERNAME=username"
+-e "OS_PASSWORD=password"
+-e "OS_REGION_NAME=SBG"
+-e "OS_INTERFACE=public"
+-e "OS_IDENTITY_API_VERSION=3"
 ```
 
 ## Backup via rclone
