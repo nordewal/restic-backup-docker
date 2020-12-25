@@ -4,14 +4,14 @@ FROM alpine:latest as rclone
 ADD https://downloads.rclone.org/rclone-current-linux-amd64.zip /
 RUN unzip rclone-current-linux-amd64.zip && mv rclone-*-linux-amd64/rclone /bin/rclone && chmod +x /bin/rclone
 
-# install docker command for hooks
-RUN apk add --update docker openrc
-RUN rc-update add docker boot
-
 FROM restic/restic:latest
 
 # install mailx
 RUN apk add --update --no-cache heirloom-mailx fuse
+
+# install docker command for hooks
+RUN apk add --update docker openrc
+RUN rc-update add docker boot
 
 COPY --from=rclone /bin/rclone /bin/rclone
 
